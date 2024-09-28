@@ -1,3 +1,4 @@
+from app.lib.Env import open_ai_api_key
 from fastapi import APIRouter, File, UploadFile, HTTPException
 import whisper
 import os
@@ -7,6 +8,9 @@ import shutil
 import math
 import warnings
 from pydantic import BaseModel
+from openai import OpenAI
+
+client = OpenAI(api_key=open_ai_api_key)
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
@@ -28,7 +32,7 @@ def compress_audio(audio: AudioSegment, target_bitrate="64k", target_sample_rate
     audio = audio.set_frame_rate(target_sample_rate)
     audio = audio.set_channels(1)  # Mono
     compressed_audio_path = f"temp/compressed_{uuid.uuid4()}.wav"
-    
+
     # Export compressed audio
     audio.export(compressed_audio_path, format="wav", bitrate=target_bitrate)
     return compressed_audio_path
@@ -106,4 +110,142 @@ async def transcribe(file: UploadFile = File(...)):
 
     except Exception as e:
         clear_temp_directory()  # Ensure temp is cleared on error
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# Set your OpenAI API key
+
+# Define the input model for transcription
+class TranscriptionRequest(BaseModel):
+    transcription: str
+
+# Define the expected response model (if needed)
+class SummaryResponse(BaseModel):
+    transcription: str
+    summary: str
+
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+
+def chunk_text(text, max_tokens=2000):
+    words = text.split()
+    chunks = []
+    current_chunk = []
+
+    current_tokens = 0
+    for word in words:
+        # Estimate that each word is 1.33 tokens (rough approximation)
+        token_estimate = len(word) / 4
+        if current_tokens + token_estimate > max_tokens:
+            chunks.append(" ".join(current_chunk))
+            current_chunk = [word]
+            current_tokens = token_estimate
+        else:
+            current_chunk.append(word)
+            current_tokens += token_estimate
+
+    if current_chunk:
+        chunks.append(" ".join(current_chunk))
+
+    return chunks
+
+@api_router.post("/summarize")
+async def summarize_transcription(request: TranscriptionRequest):
+    try:
+        print("Received request for summarization.")
+        transcription = request.transcription.strip()
+
+        # If transcription is empty, load from summary.txt
+        if not transcription:
+            print("No transcription provided. Attempting to read from summary.txt.")
+            summary_file_path = os.path.join(BASE_DIR, 'summary.txt')
+
+            if os.path.exists(summary_file_path):
+                print(f"summary.txt found at {summary_file_path}.")
+                with open(summary_file_path, 'r') as file:
+                    transcription = file.read()
+                    print("Successfully read transcription from summary.txt.")
+            else:
+                print("summary.txt is missing. Cannot proceed.")
+                raise HTTPException(status_code=500, detail="No transcription provided and summary.txt is missing.")
+
+        # Chunk the transcription into manageable parts
+        chunks = chunk_text(transcription)
+        print(f"Transcription split into {len(chunks)} chunks for summarization.")
+
+        final_summary = []
+
+        # Process each chunk
+        for i, chunk in enumerate(chunks):
+            print(f"Processing chunk {i+1}/{len(chunks)}")
+
+            prompt = f"""
+            Here is a transcription of a conversation. The conversation involves multiple people, and I want you to try your best to identify who is speaking based on the context, tone, and content. Summarize the key points and label the speakers where possible.
+
+            Transcription: {chunk}
+            """
+
+            try:
+                response = client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[
+                        {"role": "system", "content": "You are an assistant that can identify speakers based on textual cues."},
+                        {"role": "user", "content": prompt}
+                    ]
+                )
+                summary = response.choices[0].message.content
+                final_summary.append(summary)
+                print(f"Successfully received summary for chunk {i+1}")
+
+            except Exception as e:
+                print(f"GPT-4 API failed for chunk {i+1} with error: {e}")
+                raise HTTPException(status_code=500, detail="Error while generating summary.")
+
+        # Combine the chunked summaries into one
+        combined_summary = " ".join(final_summary)
+
+        # 🚨 feed a model summary to the agent to help it always get the structure right
+
+        # Send the combined summary for final summarization
+        print("Sending combined summary to GPT-4 for final summarization.")
+        final_prompt = f"""
+        Here is a combined summary of a transcription that was split into multiple chunks and summarized in chunks. 
+
+        This meeting happened in the context of our company called Rainsound.ai. We build AI Agents for customers like Nvidia, Salesforce, and Microsoft.
+        
+        Some meetings are internal while others involve external entities like our finance lead or sales lead etc.
+        There are stategy meetings, business operation meetings, customer-facing sales meetings, and delivery work sessions.
+
+        When meetings begin with introductions, skip that part for the purpose of this summary except for external people. Represent everyone who spoke in this meeting in a concise list.
+
+        Organize the the response into a one sentence intro and then 1-5 sections containing bullet points for key insights, and then an analysis at the end. 
+        If any next actions were discussed please include those in the final analysis. 
+        
+        The title of each section should feel intuitive. 
+        
+        Throughout the entire response clearly mark who said what when relevant. 
+
+        Propose potential next actions in a section at the very end called "Potential Next Actions".
+
+        Combined Summary: {combined_summary}
+        """
+
+        try:
+            final_response = client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {"role": "system", "content": "You are an assistant that provides concise summaries."},
+                    {"role": "user", "content": final_prompt}
+                ]
+            )
+            final_summary = final_response.choices[0].message.content
+            print("Successfully received final summary.")
+
+        except Exception as e:
+            print(f"GPT-4 API failed for final summarization with error: {e}")
+            raise HTTPException(status_code=500, detail="Error while generating final summary.")
+
+        return {"transcription": transcription, "summary": final_summary}
+
+    except Exception as e:
+        print(f"An error occurred during the summarization process: {e}")
         raise HTTPException(status_code=500, detail=str(e))
