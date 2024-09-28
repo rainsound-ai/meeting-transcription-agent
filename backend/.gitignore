@@ -3,3 +3,4 @@ storage
 .env
 .venv
 .ruff_cache
+transcription.txt
