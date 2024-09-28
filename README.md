@@ -1,3 +1,2 @@
-# Python Sveltekit Starter 2024
-
-This is a starter template for how rainsound.ai builds python/sveltekit apps in 2024.
+# Meeting Transcription Assistant
+This how rainsound.ai transcribes meetings from audio files. 
