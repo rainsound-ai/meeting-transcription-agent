@@ -10,8 +10,11 @@ import warnings
 from pydantic import BaseModel
 from openai import OpenAI
 
+BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
+
 client = OpenAI(api_key=open_ai_api_key)
 
+# Ignore torch warning 
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 api_router = APIRouter()
@@ -106,14 +109,17 @@ async def transcribe(file: UploadFile = File(...)):
         combined_transcription = " ".join(transcriptions)
         print(f"Combined transcription: {combined_transcription}")
 
+        transcription_file_path = os.path.join(BASE_DIR, 'transcription.txt')
+        with open(transcription_file_path, 'w') as file:
+            file.write(combined_transcription)
+            print(f"Transcription saved to {transcription_file_path}")
+
         return {"transcription": combined_transcription}
 
     except Exception as e:
         clear_temp_directory()  # Ensure temp is cleared on error
         raise HTTPException(status_code=500, detail=str(e))
 
-
-# Set your OpenAI API key
 
 # Define the input model for transcription
 class TranscriptionRequest(BaseModel):
@@ -124,7 +130,6 @@ class SummaryResponse(BaseModel):
     transcription: str
     summary: str
 
-BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 
 def chunk_text(text, max_tokens=2000):
     words = text.split()
