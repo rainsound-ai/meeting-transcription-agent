@@ -1,21 +1,24 @@
-<script>
+<script lang="ts">
 	import * as Urls from '../lib/Urls.shared';
-
-	let file;
-	let fileName = '';
-	let transcription = '';
-	let summary = '';
-	let isLoadingTranscription = false;
-	let isLoadingSummary = false;
-	let error = '';
-	let copiedTranscription = false;
-	let copiedSummary = false;
-	let loadingMessage = ''; // To hold the current loading message
-	let intervalId; // For the setInterval reference
-	let phraseIndex = 0; // To cycle through phrases
-	let ellipsisCount = 0; // To control how many ellipses are shown
+	import type { TranscriptionRequest, TranscriptionResponse } from '../lib/ApiTypes';
 	import '../app.css';
-	const loadingPhrases = ['Whirring away', 'Thinking hard', 'Processing'];
+
+	// Declare variable types
+	let file: File | null = null;
+	let fileName: string = '';
+	let transcription: string = '';
+	let summary: string = '';
+	let isLoadingTranscription: boolean = false;
+	let isLoadingSummary: boolean = false;
+	let error: string = '';
+	let copiedTranscription: boolean = false;
+	let copiedSummary: boolean = false;
+	let loadingMessage: string = ''; // To hold the current loading message
+	let intervalId: number; // For the setInterval reference
+	let phraseIndex: number = 0; // To cycle through phrases
+	let ellipsisCount: number = 0; // To control how many ellipses are shown
+
+	const loadingPhrases: string[] = ['Whirring away', 'Thinking hard', 'Processing'];
 
 	// Function to handle the ellipsis logic
 	const startLoadingAnimation = () => {
@@ -42,9 +45,10 @@
 		updateUI(); // Update the UI
 	};
 
-	const handleFileChange = (event) => {
-		file = event.target.files[0];
-		fileName = file.name;
+	const handleFileChange = (event: Event) => {
+		const target = event.target as HTMLInputElement;
+		file = target.files ? target.files[0] : null;
+		fileName = file ? file.name : '';
 		error = '';
 		transcription = '';
 		summary = '';
@@ -78,10 +82,10 @@
 				throw new Error(errorData.detail || 'An error occurred during transcription.');
 			}
 
-			const data = await response.json();
+			const data: TranscriptionResponse = await response.json();
 			transcription = data.transcription;
 		} catch (err) {
-			error = err.message;
+			error = (err as Error).message;
 		} finally {
 			isLoadingTranscription = false;
 			stopLoadingAnimation(); // Stop the animation
@@ -106,7 +110,7 @@
 
 				// Ask the user for confirmation, including the file name
 				const userConfirmed = confirm(
-					`No transcription is currently available in memory. Do you want to summarize the contents of ${fileName}?`
+					`I couldn't find a transcription in memory. Do you want to summarize the contents of ${fileName}? That was the last transcription you ran as far as I know.`
 				);
 				if (!userConfirmed) {
 					return; // User declined, so do not proceed
@@ -123,12 +127,16 @@
 		updateUI();
 
 		try {
+			const transcriptionRequest: TranscriptionRequest = {
+				transcription: transcription
+			};
+
 			const response = await fetch(`${Urls.apiRoot()}/summarize`, {
 				method: 'POST',
 				headers: {
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify({ transcription })
+				body: JSON.stringify(transcriptionRequest)
 			});
 
 			if (!response.ok) {
@@ -139,7 +147,7 @@
 			const data = await response.json();
 			summary = data.summary;
 		} catch (err) {
-			error = err.message;
+			error = (err as Error).message;
 		} finally {
 			isLoadingSummary = false;
 			stopLoadingAnimation(); // Stop the animation
@@ -147,57 +155,26 @@
 		}
 	};
 
-	// const summarizeTranscription = async () => {
-	// 	isLoadingSummary = true;
-	// 	error = '';
-	// 	startLoadingAnimation(); // Start the animation
-	// 	updateUI();
-
-	// 	try {
-	// 		const response = await fetch(`${Urls.apiRoot()}/summarize`, {
-	// 			method: 'POST',
-	// 			headers: {
-	// 				'Content-Type': 'application/json'
-	// 			},
-	// 			body: JSON.stringify({ transcription })
-	// 		});
-
-	// 		if (!response.ok) {
-	// 			const errorData = await response.json();
-	// 			throw new Error(errorData.detail || 'An error occurred during summarization.');
-	// 		}
-
-	// 		const data = await response.json();
-	// 		summary = data.summary;
-	// 	} catch (err) {
-	// 		error = err.message;
-	// 	} finally {
-	// 		isLoadingSummary = false;
-	// 		stopLoadingAnimation(); // Stop the animation
-	// 		updateUI();
-	// 	}
-	// };
-
 	const updateUI = () => {
-		document.getElementById('transcription-content').innerText = isLoadingTranscription
+		document.getElementById('transcription-content')!.innerText = isLoadingTranscription
 			? loadingMessage || 'Loading...'
 			: transcription || 'Transcription will appear here.';
-		document.getElementById('summary-content').innerText = isLoadingSummary
+		document.getElementById('summary-content')!.innerText = isLoadingSummary
 			? loadingMessage || 'Loading...'
 			: summary || 'Summary will appear here.';
-		document.getElementById('transcribe-btn').innerText = isLoadingTranscription
+		document.getElementById('transcribe-btn')!.innerText = isLoadingTranscription
 			? 'Transcribing...'
 			: 'Transcribe';
-		document.getElementById('summarize-btn').innerText = isLoadingSummary
+		document.getElementById('summarize-btn')!.innerText = isLoadingSummary
 			? 'Summarizing...'
 			: 'Summarize';
 		if (error) {
-			document.getElementById('error-message').innerText = error;
+			document.getElementById('error-message')!.innerText = error;
 		}
 	};
 
-	const copyText = (containerId, type) => {
-		const text = document.getElementById(containerId).innerText;
+	const copyText = (containerId: string, type: string) => {
+		const text = document.getElementById(containerId)!.innerText;
 		navigator.clipboard.writeText(text).then(() => {
 			if (type === 'transcription') {
 				copiedTranscription = true;
@@ -249,7 +226,7 @@
 			>
 				<input type="file" accept="audio/*" class="hidden" on:change={handleFileChange} />
 				<span class="text-gray-600 text-lg">
-					{fileName ? `Uploaded: ${fileName}` : 'Drag and drop or click to select an audio file'}
+					{fileName ? `Uploaded: ${fileName}` : 'Click to select an audio file'}
 				</span>
 			</label>
 		</div>

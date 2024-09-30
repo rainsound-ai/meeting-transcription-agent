@@ -8,6 +8,7 @@ import shutil
 import warnings
 from pydantic import BaseModel
 from openai import OpenAI
+from app.lib.JsonSchemas import TranscriptionResponse
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 
@@ -51,9 +52,6 @@ def compress_audio_until_target_size(audio: AudioSegment, target_size_mb=24, max
         target_sample_rate = max(8000, target_sample_rate // 2)  # Halve the sample rate but not below 8kHz
 
     return compressed_audio_path, file_size_mb
-
-class TranscriptionResponse(BaseModel):
-    transcription: str
 
 @api_router.post("/transcribe", response_model=TranscriptionResponse)
 async def transcribe(file: UploadFile = File(...)):

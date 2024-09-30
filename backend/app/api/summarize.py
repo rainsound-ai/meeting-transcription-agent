@@ -5,6 +5,7 @@ import os
 import warnings
 from openai import OpenAI
 from pydantic import BaseModel
+from app.lib.JsonSchemas import TranscriptionRequest
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 
@@ -19,8 +20,6 @@ api_router = APIRouter()
 model = whisper.load_model("tiny.en")  # Choose appropriate model size
 
 # Define the input model for transcription
-class TranscriptionRequest(BaseModel):
-    transcription: str
 @api_router.post("/summarize")
 
 async def summarize_transcription(request: TranscriptionRequest):

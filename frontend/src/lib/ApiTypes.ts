@@ -7,9 +7,19 @@
 
 export interface ApiTypes {
   helloWorldResponse: HelloWorldResponse;
+  transcriptionRequest: TranscriptionRequest;
+  transcriptionResponse: TranscriptionResponse;
   [k: string]: unknown;
 }
 export interface HelloWorldResponse {
   message: string;
+  [k: string]: unknown;
+}
+export interface TranscriptionRequest {
+  transcription: string;
+  [k: string]: unknown;
+}
+export interface TranscriptionResponse {
+  transcription: string;
   [k: string]: unknown;
 }
