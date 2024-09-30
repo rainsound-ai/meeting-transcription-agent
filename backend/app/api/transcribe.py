@@ -86,8 +86,8 @@ async def transcribe(file: UploadFile = File(...)):
         os.remove(compressed_wav_path)
 
         transcription_file_path = os.path.join(BASE_DIR, 'transcription.txt')
-        with open(transcription_file_path, 'w') as file:
-            file.write(result["text"])
+        with open(transcription_file_path, 'w') as file_handle:
+            file_handle.write(f"File Name: {file.filename}\n\n{result['text']}")
         # Return the transcription result
         return {"transcription": result["text"]}
 

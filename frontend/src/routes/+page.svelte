@@ -15,7 +15,7 @@
 	let phraseIndex = 0; // To cycle through phrases
 	let ellipsisCount = 0; // To control how many ellipses are shown
 	import '../app.css';
-	const loadingPhrases = ['Whirring away', 'Analyzing data', 'Processing audio'];
+	const loadingPhrases = ['Whirring away', 'Thinking hard', 'Processing'];
 
 	// Function to handle the ellipsis logic
 	const startLoadingAnimation = () => {
@@ -90,6 +90,33 @@
 	};
 
 	const summarizeTranscription = async () => {
+		if (!transcription) {
+			try {
+				// Fetch the first line of transcription.txt (file name)
+				const response = await fetch(`${Urls.apiRoot()}/get_transcription_file_name`, {
+					method: 'GET'
+				});
+
+				if (!response.ok) {
+					throw new Error('Unable to retrieve transcription file name.');
+				}
+
+				const data = await response.json();
+				const fileName = data.file_name; // Get the file name from the response
+
+				// Ask the user for confirmation, including the file name
+				const userConfirmed = confirm(
+					`No transcription is currently available in memory. Do you want to summarize the contents of ${fileName}?`
+				);
+				if (!userConfirmed) {
+					return; // User declined, so do not proceed
+				}
+			} catch (err) {
+				alert('Error retrieving transcription file name.');
+				return; // Prevent further execution if error occurs
+			}
+		}
+
 		isLoadingSummary = true;
 		error = '';
 		startLoadingAnimation(); // Start the animation
@@ -119,6 +146,37 @@
 			updateUI();
 		}
 	};
+
+	// const summarizeTranscription = async () => {
+	// 	isLoadingSummary = true;
+	// 	error = '';
+	// 	startLoadingAnimation(); // Start the animation
+	// 	updateUI();
+
+	// 	try {
+	// 		const response = await fetch(`${Urls.apiRoot()}/summarize`, {
+	// 			method: 'POST',
+	// 			headers: {
+	// 				'Content-Type': 'application/json'
+	// 			},
+	// 			body: JSON.stringify({ transcription })
+	// 		});
+
+	// 		if (!response.ok) {
+	// 			const errorData = await response.json();
+	// 			throw new Error(errorData.detail || 'An error occurred during summarization.');
+	// 		}
+
+	// 		const data = await response.json();
+	// 		summary = data.summary;
+	// 	} catch (err) {
+	// 		error = err.message;
+	// 	} finally {
+	// 		isLoadingSummary = false;
+	// 		stopLoadingAnimation(); // Stop the animation
+	// 		updateUI();
+	// 	}
+	// };
 
 	const updateUI = () => {
 		document.getElementById('transcription-content').innerText = isLoadingTranscription
