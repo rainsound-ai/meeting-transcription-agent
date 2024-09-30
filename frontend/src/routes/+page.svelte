@@ -112,7 +112,7 @@
 					return; // User declined, so do not proceed
 				}
 			} catch (err) {
-				alert('Error retrieving transcription file name.');
+				alert(`Couldn't find a transcription to summarize.`);
 				return; // Prevent further execution if error occurs
 			}
 		}
