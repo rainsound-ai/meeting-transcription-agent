@@ -10,7 +10,37 @@
 	let error = '';
 	let copiedTranscription = false;
 	let copiedSummary = false;
+	let loadingMessage = ''; // To hold the current loading message
+	let intervalId; // For the setInterval reference
+	let phraseIndex = 0; // To cycle through phrases
+	let ellipsisCount = 0; // To control how many ellipses are shown
 	import '../app.css';
+	const loadingPhrases = ['Whirring away', 'Analyzing data', 'Processing audio'];
+
+	// Function to handle the ellipsis logic
+	const startLoadingAnimation = () => {
+		phraseIndex = 0;
+		ellipsisCount = 0;
+		loadingMessage = loadingPhrases[phraseIndex];
+
+		intervalId = setInterval(() => {
+			ellipsisCount = (ellipsisCount + 1) % 6; // Add up to 5 ellipses
+			if (ellipsisCount === 0) {
+				// Switch to the next phrase after 5 ellipses
+				phraseIndex = (phraseIndex + 1) % loadingPhrases.length;
+				loadingMessage = loadingPhrases[phraseIndex];
+			}
+			loadingMessage = `${loadingPhrases[phraseIndex]}${'.'.repeat(ellipsisCount)}`;
+			updateUI(); // Update the UI to reflect the new loading message
+		}, 1000);
+	};
+
+	// Stop the loading animation when loading is complete
+	const stopLoadingAnimation = () => {
+		clearInterval(intervalId); // Stop the interval
+		loadingMessage = ''; // Clear the loading message
+		updateUI(); // Update the UI
+	};
 
 	const handleFileChange = (event) => {
 		file = event.target.files[0];
@@ -31,6 +61,7 @@
 		transcription = '';
 		summary = '';
 		error = '';
+		startLoadingAnimation(); // Start the animation
 		updateUI();
 
 		const formData = new FormData();
@@ -53,6 +84,7 @@
 			error = err.message;
 		} finally {
 			isLoadingTranscription = false;
+			stopLoadingAnimation(); // Stop the animation
 			updateUI();
 		}
 	};
@@ -60,6 +92,7 @@
 	const summarizeTranscription = async () => {
 		isLoadingSummary = true;
 		error = '';
+		startLoadingAnimation(); // Start the animation
 		updateUI();
 
 		try {
@@ -82,16 +115,17 @@
 			error = err.message;
 		} finally {
 			isLoadingSummary = false;
+			stopLoadingAnimation(); // Stop the animation
 			updateUI();
 		}
 	};
 
 	const updateUI = () => {
 		document.getElementById('transcription-content').innerText = isLoadingTranscription
-			? getLoadingMessage(['Analyzing audio...', 'Whirring away...', 'Transcribing audio...'])
+			? loadingMessage || 'Loading...'
 			: transcription || 'Transcription will appear here.';
 		document.getElementById('summary-content').innerText = isLoadingSummary
-			? getLoadingMessage(['Summarizing audio...', 'Thinking...', 'Whirring away...'])
+			? loadingMessage || 'Loading...'
 			: summary || 'Summary will appear here.';
 		document.getElementById('transcribe-btn').innerText = isLoadingTranscription
 			? 'Transcribing...'
@@ -102,10 +136,6 @@
 		if (error) {
 			document.getElementById('error-message').innerText = error;
 		}
-	};
-
-	const getLoadingMessage = (messages) => {
-		return messages[Math.floor(Math.random() * messages.length)];
 	};
 
 	const copyText = (containerId, type) => {
@@ -148,11 +178,11 @@
 			id="summarize-btn"
 			class="bg-gray-800 text-white py-3 px-6 rounded-md hover:bg-gray-900 focus:ring-4 focus:ring-gray-300 transition"
 			on:click={summarizeTranscription}
-			disabled={!transcription || isLoadingSummary}
 		>
 			Summarize
 		</button>
 	</div>
+	<!-- File input -->
 	<!-- File input wrapped in the same container as text areas -->
 	<div class="w-full max-w-6xl">
 		<div class="flex justify-center w-full">
@@ -174,12 +204,12 @@
 			<h2 class="text-xl font-semibold text-gray-700 mb-2">Transcription</h2>
 			<!-- Copy Button Inside Text Area -->
 			<div class="relative overflow-y-auto h-64 p-4 bg-[#f6f3f0] border border-gray-200 rounded-lg">
-				<button
+				<!-- <button
 					class="absolute right-2 top-2 bg-[#e2dfdb] px-2 py-1 rounded-md hover:bg-gray-300 transition"
 					on:click={() => copyText('transcription-content', 'transcription')}
 				>
 					{copiedTranscription ? 'Copied' : 'Copy'}
-				</button>
+				</button> -->
 				<div id="transcription-content" class="pt-6">Transcription will appear here.</div>
 			</div>
 		</div>
