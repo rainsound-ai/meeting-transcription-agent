@@ -1,0 +1,29 @@
+services:
+  - name: fastapi-backend
+    type: web
+    env: python
+    plan: free  # Adjust the plan as needed.
+    buildCommand: "poetry install"
+    startCommand: "poetry run uvicorn backend.main:app --host 0.0.0.0 --port 8000"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12  # Matching the Python version in your `pyproject.toml`.
+      - key: PORT
+        value: 8000
+    autoDeploy: true
+    disk:
+      sizeGB: 1  # Adjust the disk size for storing temporary files as needed.
+
+  - name: sveltekit-frontend
+    type: web
+    env: node
+    plan: free  # Adjust based on your app's needs.
+    buildCommand: "npm install && npm run build"
+    startCommand: "npm run preview -- --port 5000"
+    envVars:
+      - key: NODE_VERSION
+        value: 20  # Ensure this matches your Node version.
+    routes:
+      - type: rewrite
+        source: "/api/(.*)"
+        destination: "http://fastapi-backend:8000/api/$1"  # Routes API calls to FastAPI backend.
