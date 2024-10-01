@@ -7,7 +7,7 @@ services:
     startCommand: "poetry run uvicorn backend.main:app --host 0.0.0.0 --port 8000"
     envVars:
       - key: PYTHON_VERSION
-        value: 3.12  # Ensure this matches your Python version.
+        value: 3.12.0
       - key: PORT
         value: 8000
     autoDeploy: true
