@@ -2,7 +2,7 @@ services:
   - name: fastapi-backend
     type: web
     env: python
-    plan: free  # Ensure you're on the free tier or choose another plan
+    plan: free
     buildCommand: "poetry install"
     startCommand: "poetry run uvicorn backend.main:app --host 0.0.0.0 --port 8000"
     envVars:
@@ -10,14 +10,13 @@ services:
         value: 3.12.0
       - key: PORT
         value: 8000
-    autoDeploy: true
 
   - name: sveltekit-frontend
     type: web
     env: node
-    plan: free  # Adjust as needed based on the size of your app.
-    buildCommand: "npm install && npm run build"
-    startCommand: "npm run preview -- --port 5000"
+    plan: free
+    buildCommand: "cd frontend && npm install && npm run build"
+    startCommand: "cd frontend && npm run preview -- --port 5000"
     envVars:
       - key: NODE_VERSION
-        value: 20  # Ensure this matches your Node.js version.
+        value: 20
