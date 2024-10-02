@@ -13,9 +13,9 @@ app = FastAPI()
 frontend_url = "https://sveltekit-frontend.onrender.com"
 
 # We want this service's endpoints to be available from /api.
-prefix = ""
+prefix = "/api"
 if environment == "dev":
-    prefix = "/api"
+    prefix = prefix
     logger = logging.getLogger("uvicorn")
     logger.warning("Running in development mode - allowing CORS for all origins")
     app.add_middleware(
