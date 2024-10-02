@@ -1,10 +1,8 @@
 from app.lib.Env import open_ai_api_key
 from fastapi import APIRouter,  HTTPException
-import whisper
 import os
 import warnings
 from openai import OpenAI
-from pydantic import BaseModel
 from app.lib.JsonSchemas import TranscriptionRequest
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
@@ -15,9 +13,6 @@ client = OpenAI(api_key=open_ai_api_key)
 warnings.filterwarnings("ignore", category=FutureWarning)
 
 api_router = APIRouter()
-
-# Load Whisper model once at startup
-model = whisper.load_model("tiny.en")  # Choose appropriate model size
 
 # Define the input model for transcription
 @api_router.post("/summarize")
