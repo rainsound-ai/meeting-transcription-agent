@@ -52,13 +52,14 @@ def compress_audio_until_target_size(audio: AudioSegment, file_extension: str, t
     return compressed_audio_path, file_size_bytes
 
 # Function to transcribe a chunk (make this synchronous)
-def transcribe_chunk(chunk_path, idx):
+def transcribe_then_delete_chunk(chunk_path, idx):
     with open(chunk_path, "rb") as chunk_file:
         result = client.audio.transcriptions.create(
             model="whisper-1",
             file=chunk_file,
             response_format="text"
         )
+        os.remove(chunk_path)
     return idx, result
 
 # Function to selectively split a large chunk on sentence breaks if it exceeds size
@@ -120,7 +121,7 @@ async def transcribe(file: UploadFile = File(...)):
             for idx, chunk in enumerate(audio_chunks):
                 chunk_path = f"temp/chunk_{idx}.wav"
                 chunk.export(chunk_path, format="wav")  # Save each chunk to a file
-                tasks.append(loop.run_in_executor(executor, transcribe_chunk, chunk_path, idx))
+                tasks.append(loop.run_in_executor(executor, transcribe_then_delete_chunk, chunk_path, idx))
             
             # Ensure the transcriptions are ordered by chunk index
             results = await asyncio.gather(*tasks)
