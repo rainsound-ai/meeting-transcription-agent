@@ -32,7 +32,7 @@ else:
     print("setting up CORS middleware for production")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],  # Allow only the SvelteKit frontend
+        allow_origins=[frontend_url],  # Allow only the SvelteKit frontend
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

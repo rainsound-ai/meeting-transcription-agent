@@ -99,7 +99,8 @@
 				// Fetch the first line of transcription.txt (file name)
 				console.log(Urls.apiRoot());
 				const response = await fetch(`${Urls.apiRoot()}/get_transcription_file_name`, {
-					method: 'GET'
+					method: 'GET',
+					credentials: 'include'
 				});
 
 				if (!response.ok) {
