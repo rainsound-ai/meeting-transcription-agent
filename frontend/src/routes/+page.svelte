@@ -97,7 +97,6 @@
 		if (!transcription) {
 			try {
 				// Fetch the first line of transcription.txt (file name)
-				console.log(Urls.apiRoot());
 				const response = await fetch(`${Urls.apiRoot()}/get_transcription_file_name`, {
 					method: 'GET'
 				});
@@ -107,10 +106,17 @@
 				}
 
 				const data = await response.json();
-				console.log(data);
+
+				if (data.file_not_found) {
+					// Display a message if the file was not found
+					alert(
+						`Couldn't find a transcription to summarize. Please generate one by uploading a file and clicking Transcribe.`
+					);
+					return; // Prevent further execution if no file is found
+				}
+
 				const fileName = data.file_name; // Get the file name from the response
 
-				console.log('File name:', fileName);
 				// Ask the user for confirmation, including the file name
 				const userConfirmed = confirm(
 					`I couldn't find a transcription in memory. Do you want to summarize the contents of ${fileName}? That was the last transcription you ran as far as I know.`
@@ -120,11 +126,14 @@
 				}
 			} catch (err) {
 				console.log(err);
-				alert(`Couldn't find a transcription to summarize.`);
+				alert(
+					`Couldn't find a transcription to summarize. Please generate one by uploading a file and clicking Transcribe.`
+				);
 				return; // Prevent further execution if error occurs
 			}
 		}
 
+		// Continue with summarization if transcription is available
 		isLoadingSummary = true;
 		error = '';
 		startLoadingAnimation(); // Start the animation

@@ -1,4 +1,4 @@
-from fastapi import APIRouter,  HTTPException
+from fastapi import APIRouter
 import os
 
 api_router = APIRouter()
@@ -14,8 +14,8 @@ async def get_transcription_file_name():
             first_line = file.readline().strip()  # Read the first line (file name)
             if first_line.startswith("File Name:"):
                 file_name = first_line.replace("File Name:", "").strip()
-                return {"file_name": file_name}
+                return {"file_not_found": False, "file_name": file_name}
             else:
-                raise HTTPException(status_code=400, detail="Invalid file format. No file name found.")
+                return {"file_not_found": True, "file_name": ""}
     else:
-        raise HTTPException(status_code=404, detail="transcription.txt not found.")
+        return {"file_not_found": True, "file_name": ""}
