@@ -40,8 +40,9 @@ else:
 
 app.include_router(api_router, prefix=prefix)
 
-if __name__ == "__main__":
-    if "--save-json-schemas" in sys.argv:
-        JsonSchemas.save_all()
-    else:
-        uvicorn.run(app="main:app", host="0.0.0.0", reload=True)
+if environment == "dev":
+    if __name__ == "__main__":
+        if "--save-json-schemas" in sys.argv:
+            JsonSchemas.save_all()
+        else:
+            uvicorn.run(app="main:app", host="0.0.0.0", reload=True)
