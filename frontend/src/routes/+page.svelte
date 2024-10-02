@@ -97,6 +97,7 @@
 		if (!transcription) {
 			try {
 				// Fetch the first line of transcription.txt (file name)
+				console.log(Urls.apiRoot());
 				const response = await fetch(`${Urls.apiRoot()}/get_transcription_file_name`, {
 					method: 'GET'
 				});
@@ -106,8 +107,10 @@
 				}
 
 				const data = await response.json();
+				console.log(data);
 				const fileName = data.file_name; // Get the file name from the response
 
+				console.log('File name:', fileName);
 				// Ask the user for confirmation, including the file name
 				const userConfirmed = confirm(
 					`I couldn't find a transcription in memory. Do you want to summarize the contents of ${fileName}? That was the last transcription you ran as far as I know.`
@@ -116,6 +119,7 @@
 					return; // User declined, so do not proceed
 				}
 			} catch (err) {
+				console.log(err);
 				alert(`Couldn't find a transcription to summarize.`);
 				return; // Prevent further execution if error occurs
 			}

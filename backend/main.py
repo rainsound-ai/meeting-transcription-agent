@@ -9,10 +9,10 @@ from app.lib import JsonSchemas
 
 app = FastAPI()
 
+# CORS settings
+frontend_url = "https://sveltekit-frontend.onrender.com"
+
 # We want this service's endpoints to be available from /api.
-#
-# In production, Digital Ocean handles that for us. In development,
-# we add the prefix ourselves.
 prefix = ""
 if environment == "dev":
     prefix = "/api"
@@ -20,7 +20,16 @@ if environment == "dev":
     logger.warning("Running in development mode - allowing CORS for all origins")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=["*"],  # Allow all origins in development
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+else:
+    # In production, allow only the frontend URL
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[frontend_url],  # Allow only the SvelteKit frontend
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
