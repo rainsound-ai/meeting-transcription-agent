@@ -16,6 +16,7 @@ frontend_url = "https://sveltekit-frontend.onrender.com"
 prefix = "/api"
 print(f"Running in {environment} environment")
 if environment == "dev":
+    print("setting up CORS middleware for dev")
     prefix = prefix
     logger = logging.getLogger("uvicorn")
     logger.warning("Running in development mode - allowing CORS for all origins")
@@ -28,9 +29,10 @@ if environment == "dev":
     )
 else:
     # In production, allow only the frontend URL
+    print("setting up CORS middleware for production")
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=[frontend_url],  # Allow only the SvelteKit frontend
+        allow_origins=["*"],  # Allow only the SvelteKit frontend
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
