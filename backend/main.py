@@ -14,6 +14,7 @@ frontend_url = "https://sveltekit-frontend.onrender.com"
 
 # We want this service's endpoints to be available from /api.
 prefix = "/api"
+print(f"Running in {environment} environment")
 if environment == "dev":
     prefix = prefix
     logger = logging.getLogger("uvicorn")
